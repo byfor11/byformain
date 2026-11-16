@@ -77,7 +77,7 @@
   function openModule(key) {
     const from = UI.ovDate;
     const onClose = () => { closeOverlay(); if (from) openDay(from); else render(); };
-    window.BFModules[key === 'ajedrez' ? 'openChess' : 'openMental']({ onClose });
+    window.BFModules.open(key, { onClose });
   }
 
   /* ---------- estados ---------- */
@@ -138,7 +138,7 @@
       const autoNote = h('div', { class: 'sub', style: { marginTop: '8px', fontSize: '12.5px' } });
       const el = h('section', { class: 'card', style: { '--c': goal.color } },
         h('div', { class: 'top' }, h('div', { class: 'nm' }, h('b', null, goal.name), sub),
-          goal.module && date === today() ? h('button', { class: 'btn small primary', 'data-module': goal.module, onclick: () => openModule(goal.module) }, goal.module === 'ajedrez' ? 'Jugar' : 'Entrenar') : null, badge), seg, amountRow, autoNote, noteWrap);
+          goal.module && date === today() ? h('button', { class: 'btn small primary', 'data-module': goal.module, onclick: () => openModule(goal.module) }, window.BFModules.btnLabel(goal.module)) : null, badge), seg, amountRow, autoNote, noteWrap);
       function update() {
         e = getE(); if (!e) return;
         el.querySelector('.badge').className = 'badge s-' + e.status;
@@ -355,14 +355,14 @@
     }
     const startI = h('input', { class: 'inp', type: 'date', value: f.start, 'aria-label': 'Fecha de inicio' }); startI.addEventListener('change', () => { if (startI.value) f.start = startI.value; });
     const modBox = h('div');
-    function drawMod() { modBox.replaceChildren(h('div', { class: 'seg' }, [[null, 'Ninguno'], ['ajedrez', 'Ajedrez'], ['calculo', 'Cálculo mental']].map(([k, l]) => h('button', { type: 'button', 'data-mod': k || 'none', class: f.module === k ? 'on' : '', onclick: () => { f.module = k; drawMod(); } }, l)))); }
+    function drawMod() { modBox.replaceChildren(h('div', { class: 'chips2 k3 sm modchips' }, [[null, 'Ninguno'], ['ajedrez', 'Ajedrez'], ['calculo', 'Cálculo mental'], ['gramatica', 'Gramática inglesa'], ['speaking', 'Speaking'], ['listening', 'Listening (dictado)']].map(([k, l]) => h('button', { type: 'button', 'data-mod': k || 'none', class: f.module === k ? 'on' : '', onclick: () => { f.module = k; drawMod(); } }, l)))); }
     drawColor(); drawSched(); drawTarget(); drawMod();
     body.append(
       h('div', { class: 'field' }, h('label', null, 'Nombre'), nameI),
       h('div', { class: 'field' }, h('div', { class: 'lb' }, 'Color'), colorBox),
       h('div', { class: 'field' }, h('div', { class: 'lb' }, 'Frecuencia'), schedBox),
       h('div', { class: 'field' }, h('div', { class: 'lb' }, 'Meta'), targetBox),
-      h('div', { class: 'field' }, h('div', { class: 'lb' }, 'Vincular a módulo'), modBox, h('p', { class: 'hint' }, 'Si vinculas el objetivo, las partidas o sesiones que hagas en «Entrenar» se anotan solas aquí, aunque lo renombres.')),
+      h('div', { class: 'field' }, h('div', { class: 'lb' }, 'Vincular a módulo'), modBox, h('p', { class: 'hint' }, 'Si vinculas el objetivo, las partidas o sesiones que hagas en «Entrenar» (ajedrez, cálculo, gramática, speaking o dictado) se anotan solas aquí, aunque lo renombres.')),
       h('div', { class: 'field' }, h('label', null, 'Empieza el'), startI, h('p', { class: 'hint' }, 'Los días anteriores a esta fecha no cuentan como no realizados.')));
     if (g) {
       body.append(h('p', { class: 'hint', style: { marginBottom: '14px' } }, 'Los cambios de frecuencia o meta se aplican desde hoy; el historial anterior no se modifica.'),
@@ -428,7 +428,7 @@
       } }, 'Borrar todo y restaurar ejemplos'),
       !standalone ? h('div', { class: 'sech' }, 'Instalar en el iPhone') : null,
       !standalone ? h('p', null, 'En Safari: botón Compartir (cuadrado con flecha) → «Añadir a pantalla de inicio». Se abrirá como una app, también sin conexión.') : null,
-      h('p', { style: { textAlign: 'center', marginTop: '24px' } }, 'byformain · v1.1'));
+      h('p', { style: { textAlign: 'center', marginTop: '24px' } }, 'byformain · v1.2'));
     return root;
   }
 

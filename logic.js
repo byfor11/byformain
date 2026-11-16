@@ -41,7 +41,7 @@
       versions: [{ from: start, schedule: normSchedule(o.schedule), target: normTarget(o.target) }],
     };
   }
-  const MODULES = ['ajedrez', 'calculo'];
+  const MODULES = ['ajedrez', 'calculo', 'gramatica', 'speaking', 'listening'];
   function normModule(m) { return MODULES.includes(m) ? m : null; }
   function normSchedule(s) {
     s = s || { type: 'daily' };
@@ -260,14 +260,23 @@
     { name: 'Creatina', color: '#d6a100', schedule: { type: 'daily' }, target: { value: 1, unit: 'toma' } },
     { name: 'Lectura', color: '#3b82f6', schedule: { type: 'daily' }, target: { value: 20, unit: 'páginas' } },
     { name: 'Estudio', color: '#12a150', schedule: { type: 'days', days: [0, 1, 2, 3, 4] }, target: { value: 60, unit: 'minutos' } },
-    { name: 'Listening en inglés', color: '#ec5fa5', schedule: { type: 'weekly', times: 4 }, target: { value: 20, unit: 'minutos' } },
-    { name: 'Speaking en inglés', color: '#7c5cff', schedule: { type: 'weekly', times: 3 }, target: { value: 15, unit: 'minutos' } },
+    { name: 'Listening en inglés', module: 'listening', color: '#ec5fa5', schedule: { type: 'weekly', times: 4 }, target: { value: 20, unit: 'minutos' } },
+    { name: 'Speaking en inglés', module: 'speaking', color: '#7c5cff', schedule: { type: 'weekly', times: 3 }, target: { value: 15, unit: 'minutos' } },
   ];
-  function newModules() { return { chess: { current: null, history: [], settings: { color: 'w', level: 2 } }, mental: { history: [], settings: { mode: 'mixto', level: 1, kind: 'n10' } } }; }
-  function newState(today) { return Object.assign({ app: 'byformain', v: 1, goals: SEEDS.map((s) => makeGoal(s, today)), logs: {}, meta: { created: today, lastExport: null } }, newModules()); }
+  function newModules() { return { chess: { current: null, history: [], settings: { color: 'w', level: 2 } }, mental: { history: [], settings: { mode: 'mixto', level: 1, kind: 'n10' } },
+    grammar: { history: [], recent: [], settings: { level: 'B1', topic: 'mixto', kind: 'n10' } },
+    speaking: { history: [], settings: { mode: 'hablar', level: 'B1', cat: 'mixto', dur: 60, accent: 'en-US', n: 5 } } }; }
+  const GR_LEVELS = ['A2', 'B1', 'B2', 'C1'], GR_TOPICS = ['mixto', 'tiempos', 'perfecto', 'condicionales', 'articulos', 'preposiciones', 'phrasal', 'modales', 'comparativos', 'indirecto', 'errores', 'vocabulario'];
+  const GR_KINDS = ['n10', 'n20', 'n30', 't2', 't5'], SP_MODES = ['hablar', 'shadowing', 'dictado'], SP_CATS = ['mixto', 'tema', 'situacion', 'dia', 'opinion'];
+  function newState(today) { return Object.assign({ app: 'byformain', v: 1, goals: SEEDS.map((s) => makeGoal(s, today)), logs: {}, meta: { created: today, lastExport: null, mv: MV } }, newModules()); }
+  const MV = 2; // versión de vínculos módulo↔objetivo (2: añade gramática/speaking/listening)
   const isDate = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
   const STAT = ['pending', 'partial', 'done', 'missed'];
-  function inferModule(name) { const n = String(name || '').trim().toLowerCase(); return n === 'ajedrez' ? 'ajedrez' : n === 'cálculo mental' || n === 'calculo mental' ? 'calculo' : null; }
+  function inferModule(name) {
+    const n = String(name || '').trim().toLowerCase();
+    return n === 'ajedrez' ? 'ajedrez' : n === 'cálculo mental' || n === 'calculo mental' ? 'calculo'
+      : n === 'speaking en inglés' || n === 'speaking en ingles' ? 'speaking' : n === 'listening en inglés' || n === 'listening en ingles' ? 'listening' : null;
+  }
   const num = (x, d, lo, hi) => { x = Number(x); return isFinite(x) ? Math.min(hi, Math.max(lo, x)) : d; };
   const str = (x, n) => String(x == null ? '' : x).slice(0, n);
   function cleanModules(obj) {
@@ -292,11 +301,32 @@
         kind: ['n10', 'n20', 'n30', 't2', 't5'].includes(x.kind) ? x.kind : 'n10', total: num(x.total, 0, 0, 5000), correct: num(x.correct, 0, 0, 5000), totalMs: num(x.totalMs, 0, 0, 1e9), avgMs: num(x.avgMs, 0, 0, 1e9),
         errors: Array.isArray(x.errors) ? x.errors.slice(0, 12).map((e) => ({ q: str(e && e.q, 30), a: str(e && e.a, 12), c: str(e && e.c, 12) })) : [], logged: !!x.logged }));
     }
+    const gr = obj && obj.grammar, sp = obj && obj.speaking;
+    if (gr && typeof gr === 'object') {
+      const se = gr.settings || {};
+      out.grammar.settings = { level: GR_LEVELS.includes(se.level) ? se.level : 'B1', topic: GR_TOPICS.includes(se.topic) ? se.topic : 'mixto', kind: GR_KINDS.includes(se.kind) ? se.kind : 'n10' };
+      if (Array.isArray(gr.recent)) out.grammar.recent = gr.recent.slice(-250).map((x) => str(x, 24));
+      if (Array.isArray(gr.history)) out.grammar.history = gr.history.slice(0, 500).filter((x) => x && isDate(x.date)).map((x) => {
+        const bt = {}; if (x.byTopic && typeof x.byTopic === 'object') for (const k of GR_TOPICS) if (k !== 'mixto' && Array.isArray(x.byTopic[k])) bt[k] = [num(x.byTopic[k][0], 0, 0, 5000), num(x.byTopic[k][1], 0, 0, 5000)];
+        return { id: str(x.id, 30), date: x.date, level: GR_LEVELS.includes(x.level) ? x.level : 'B1', topic: GR_TOPICS.includes(x.topic) ? x.topic : 'mixto', kind: GR_KINDS.includes(x.kind) ? x.kind : 'n10',
+          total: num(x.total, 0, 0, 5000), correct: num(x.correct, 0, 0, 5000), totalMs: num(x.totalMs, 0, 0, 1e9), avgMs: num(x.avgMs, 0, 0, 1e9), byTopic: bt,
+          errors: Array.isArray(x.errors) ? x.errors.slice(0, 15).map((e) => ({ q: str(e && e.q, 200), a: str(e && e.a, 100), c: str(e && e.c, 100), e: str(e && e.e, 260) })) : [], logged: !!x.logged };
+      });
+    }
+    if (sp && typeof sp === 'object') {
+      const se = sp.settings || {};
+      out.speaking.settings = { mode: SP_MODES.includes(se.mode) ? se.mode : 'hablar', level: GR_LEVELS.includes(se.level) ? se.level : 'B1', cat: SP_CATS.includes(se.cat) ? se.cat : 'mixto', dur: [60, 120, 180].includes(Number(se.dur)) ? Number(se.dur) : 60, accent: se.accent === 'en-GB' ? 'en-GB' : 'en-US', n: [5, 10].includes(Number(se.n)) ? Number(se.n) : 5 };
+      if (Array.isArray(sp.history)) out.speaking.history = sp.history.slice(0, 500).filter((x) => x && isDate(x.date)).map((x) => ({
+        id: str(x.id, 30), date: x.date, mode: SP_MODES.includes(x.mode) ? x.mode : 'hablar', level: GR_LEVELS.includes(x.level) ? x.level : 'B1', cat: SP_CATS.includes(x.cat) ? x.cat : 'mixto',
+        secs: num(x.secs, 0, 0, 86400), items: num(x.items, 0, 0, 500), words: num(x.words, 0, 0, 100000), score: x.score == null || isNaN(Number(x.score)) ? null : num(x.score, 0, 0, 100),
+        self: x.self == null || isNaN(Number(x.self)) ? null : num(Math.round(Number(x.self)), 3, 1, 5), accent: x.accent === 'en-GB' ? 'en-GB' : 'en-US', prompt: str(x.prompt, 200), logged: !!x.logged }));
+    }
     return out;
   }
   function validate(obj) {
     if (!obj || typeof obj !== 'object' || !Array.isArray(obj.goals) || typeof obj.logs !== 'object' || !obj.logs) throw new Error('Archivo no válido');
-    const st = { app: 'byformain', v: 1, goals: [], logs: {}, meta: { created: (obj.meta && obj.meta.created) || null, lastExport: (obj.meta && obj.meta.lastExport) || null } };
+    const st = { app: 'byformain', v: 1, goals: [], logs: {}, meta: { created: (obj.meta && obj.meta.created) || null, lastExport: (obj.meta && obj.meta.lastExport) || null, mv: MV } };
+    const oldMv = Number(obj.meta && obj.meta.mv) || 1; // migración única: con mv<2 se infieren los vínculos nuevos por el nombre
     const ids = new Set();
     for (const g of obj.goals) {
       if (!g || typeof g.id !== 'string' || ids.has(g.id) || !isDate(g.start) || !Array.isArray(g.versions) || !g.versions.length) throw new Error('Objetivo no válido');
@@ -305,7 +335,7 @@
         .sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
       if (!versions.length) throw new Error('Objetivo sin versiones');
       st.goals.push({
-        id: g.id, module: g.module === undefined ? inferModule(g.name) : normModule(g.module), name: String(g.name || 'Sin nombre').slice(0, 80), color: /^#[0-9a-fA-F]{6}$/.test(g.color) ? g.color : '#5e8bff', start: g.start,
+        id: g.id, module: g.module === undefined || (g.module === null && oldMv < 2 && /^(speaking|listening)$/.test(inferModule(g.name) || '')) ? inferModule(g.name) : normModule(g.module), name: String(g.name || 'Sin nombre').slice(0, 80), color: /^#[0-9a-fA-F]{6}$/.test(g.color) ? g.color : '#5e8bff', start: g.start,
         inactive: (g.inactive || []).filter((i) => i && isDate(i.from)).map((i) => ({ from: i.from, to: isDate(i.to) ? i.to : null })), versions,
       });
     }
@@ -335,6 +365,6 @@
   const API = { DAY, MESES, DIAS, DIAS_CORTO, toDays, fromDays, todayStr, addDays, diffDays, weekday, weekStart, weekEnd, weekDates, monthStart, monthEnd, addMonths, daysInMonth, monthGrid,
     uid, makeGoal, normSchedule, normTarget, versionAt, isActive, isArchived, archiveGoal, unarchiveGoal, updateGoal, deleteGoal, moveGoal,
     getLog, setAmount, setStatus, setNote, autoStatus, weeklyCount, statusOf, isScheduled, entriesFor, score, dayScore, rangeStats, streaks,
-    SEEDS, newState, newModules, normModule, MODULES, logActivity, validate, scheduleLabel, targetLabel, fmtNum, plural };
+    SEEDS, newState, newModules, normModule, MODULES, MV, GR_LEVELS, GR_TOPICS, logActivity, validate, scheduleLabel, targetLabel, fmtNum, plural };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.BF = API;
 })(typeof self !== 'undefined' ? self : this);

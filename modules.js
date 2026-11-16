@@ -1,11 +1,12 @@
-/* byformain — módulos "Entrenar": Ajedrez (contra el ordenador) y Cálculo mental.
+/* byformain — módulos "Entrenar": Ajedrez (contra el ordenador) y Cálculo mental; el inglés está en english.js.
    Se registran desde app.js con BFModules.init(api). Todo local, sin dependencias. */
 (function () {
   'use strict';
   const E = window.ChessEngine, M = window.BFMental, B = window.BF;
   let api, h, s;
   const LV = { 1: 'Fácil', 2: 'Medio', 3: 'Difícil' };
-  const MODKEY = { ajedrez: 'Ajedrez', calculo: 'Cálculo mental' };
+  const MODKEY = { ajedrez: 'Ajedrez', calculo: 'Cálculo mental', gramatica: 'Gramática inglesa', speaking: 'Speaking', listening: 'Listening (dictado)' };
+  const BTN = { ajedrez: 'Jugar', calculo: 'Entrenar', gramatica: 'Practicar', speaking: 'Practicar', listening: 'Practicar' };
   const S = () => api.S();
   const dateEs = (d) => { const [y, m, dd] = d.split('-').map(Number); return dd + ' ' + B.MESES[m - 1].slice(0, 3) + ' ' + y; };
   let onClose = () => {};
@@ -351,19 +352,30 @@
   function viewTrain() {
     ensureSprite(); const root = h('div'), ch = S().chess, me = S().mental, t = api.today();
     const hist = ch.history, w = hist.filter((x) => x.result === 'win').length, l = hist.filter((x) => x.result === 'loss').length;
-    const todayM = me.history.filter((x) => x.date === t);
+    const todayM = me.history.filter((x) => x.date === t), ci = window.BFEnglish ? window.BFEnglish.cardsInfo() : { gToday: 0, gAll: 0, sToday: 0, sAll: 0, spMins: 0 };
     root.append(h('div', { class: 'head' }, h('h1', null, 'Entrenar'), h('button', { class: 'btn small', style: { width: '44px', padding: 0 }, 'aria-label': 'Ajustes', onclick: api.openSettings }, api.gearIcon())),
       h('p', { class: 'sub', style: { margin: '-6px 4px 14px' } }, 'Practica dentro de la app: lo que hagas se anota solo en tus objetivos.'),
       h('button', { class: 'mcard chess', 'data-open': 'ajedrez', onclick: () => api.openModule('ajedrez') }, h('div', { class: 'mi' }, pieceEl(-5)), h('div', { class: 'mt' }, h('b', null, 'Ajedrez'),
         h('span', null, ch.current ? 'Partida en curso · jugada ' + Math.floor(ch.current.moves.length / 2 + 1) : 'Juega contra el ordenador'), h('span', { class: 'sub' }, hist.length ? hist.length + ' partidas · ' + w + ' V · ' + l + ' D' : 'Aún no has jugado')), h('span', { class: 'chev' }, '›')),
       h('button', { class: 'mcard calc', 'data-open': 'calculo', onclick: () => api.openModule('calculo') }, h('div', { class: 'mi' }, h('b', null, '÷×')), h('div', { class: 'mt' }, h('b', null, 'Cálculo mental'),
-        h('span', null, 'Sumas, restas, multiplicaciones y divisiones'), h('span', { class: 'sub' }, todayM.length ? 'Hoy: ' + todayM.length + (todayM.length === 1 ? ' sesión' : ' sesiones') : me.history.length ? me.history.length + ' sesiones en total' : 'Aún no has entrenado')), h('span', { class: 'chev' }, '›')));
+        h('span', null, 'Sumas, restas, multiplicaciones y divisiones'), h('span', { class: 'sub' }, todayM.length ? 'Hoy: ' + todayM.length + (todayM.length === 1 ? ' sesión' : ' sesiones') : me.history.length ? me.history.length + ' sesiones en total' : 'Aún no has entrenado')), h('span', { class: 'chev' }, '›')),
+      h('button', { class: 'mcard gram', 'data-open': 'gramatica', onclick: () => api.openModule('gramatica') }, h('div', { class: 'mi' }, h('b', null, 'Aa')), h('div', { class: 'mt' }, h('b', null, 'Gramática inglesa'),
+        h('span', null, 'Quiz de A2 a C1 con explicaciones'), h('span', { class: 'sub' }, ci.gToday ? 'Hoy: ' + ci.gToday + (ci.gToday === 1 ? ' sesión' : ' sesiones') : ci.gAll ? ci.gAll + ' sesiones en total' : 'Aún no has practicado')), h('span', { class: 'chev' }, '›')),
+      h('button', { class: 'mcard speak', 'data-open': 'speaking', onclick: () => api.openModule('speaking') }, h('div', { class: 'mi' }, h('b', null, '🎤')), h('div', { class: 'mt' }, h('b', null, 'Speaking y listening'),
+        h('span', null, 'Hablar, shadowing y dictado'), h('span', { class: 'sub' }, ci.sToday ? 'Hoy: ' + ci.spMins + ' min practicados' : ci.sAll ? ci.sAll + ' sesiones en total' : 'Aún no has practicado')), h('span', { class: 'chev' }, '›')));
     return root;
   }
   const gearIcon = () => h('span', { html: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>' });
 
   window.BFModules = {
-    init(a) { api = a; h = a.h; s = a.s; api.gearIcon = gearIcon; },
+    init(a) { api = a; h = a.h; s = a.s; api.gearIcon = gearIcon; if (window.BFEnglish) window.BFEnglish.init(a, { shell, seg, stat, lineChart, fmtClock, dateEs }); },
+    open(key, opts) {
+      const E2 = window.BFEnglish;
+      if (key === 'ajedrez') return openChess(opts); if (key === 'calculo') return openMental(opts);
+      if (key === 'gramatica') return E2.openGrammar(opts); if (key === 'speaking') return E2.openSpeaking(opts);
+      if (key === 'listening') return E2.openSpeaking(Object.assign({ mode: 'dictado' }, opts));
+    },
+    btnLabel: (k) => BTN[k] || 'Entrenar',
     gearIcon: () => gearIcon(),
     viewTrain, openChess, openMental,
     label: (k) => MODKEY[k],

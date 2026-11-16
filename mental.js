@@ -51,10 +51,11 @@
     return { total, correct, acc: total ? correct / total : 0, avgMs: total ? sumMs / total : 0, totalMs: elapsedMs != null ? elapsedMs : sumMs };
   }
   /* ¿a mejor que b? Por tiempo: más aciertos (luego mayor precisión). Por preguntas: mayor precisión, luego menos tiempo. */
+  const accOf = (x) => (x.acc != null ? x.acc : x.total ? x.correct / x.total : 0); // los registros guardados no llevan acc
   function isBetter(kind, a, b) {
     if (!b) return true;
-    if (kindInfo(kind).t) return a.correct > b.correct || (a.correct === b.correct && a.acc > b.acc);
-    return a.acc > b.acc || (a.acc === b.acc && a.totalMs < b.totalMs);
+    if (kindInfo(kind).t) return a.correct > b.correct || (a.correct === b.correct && accOf(a) > accOf(b));
+    return accOf(a) > accOf(b) || (accOf(a) === accOf(b) && a.totalMs < b.totalMs);
   }
   function bestFor(history, mode, level, kind) {
     let best = null;
@@ -64,9 +65,9 @@
   function bestLabel(kind, r) {
     if (!r) return 'Sin marca todavía';
     const secs = Math.round(r.totalMs / 1000), t = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
-    return kindInfo(kind).t ? r.correct + ' aciertos (' + Math.round(r.acc * 100) + ' %)' : r.correct + '/' + r.total + ' en ' + t;
+    return kindInfo(kind).t ? r.correct + ' aciertos (' + Math.round(accOf(r) * 100) + ' %)' : r.correct + '/' + r.total + ' en ' + t;
   }
   const fmtSec = (ms) => (Math.round(ms / 100) / 10).toFixed(1).replace('.', ',');
-  const API = { MODES, LEVELS, KINDS, kindInfo, kindLabel, modeLabel, levelLabel, genQuestion, nextQuestion, summarize, isBetter, bestFor, bestLabel, fmtSec };
+  const API = { MODES, LEVELS, KINDS, kindInfo, kindLabel, modeLabel, levelLabel, genQuestion, nextQuestion, summarize, isBetter, bestFor, bestLabel, fmtSec, accOf };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.BFMental = API;
 })(typeof self !== 'undefined' ? self : this);

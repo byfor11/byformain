@@ -1,6 +1,6 @@
 /* byformain service worker: funciona sin conexión. Red primero (con límite de tiempo) y caché de respaldo. */
-const CACHE = 'byformain-v2';
-const ASSETS = ['./', 'index.html', 'style.css', 'logic.js', 'chessengine.js', 'mental.js', 'modules.js', 'app.js', 'manifest.webmanifest',
+const CACHE = 'byformain-v3';
+const ASSETS = ['./', 'index.html', 'style.css', 'logic.js', 'chessengine.js', 'mental.js', 'grammar-data.js', 'grammar.js', 'speaking.js', 'english.js', 'modules.js', 'app.js', 'manifest.webmanifest',
   'icons/apple-touch-icon.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
