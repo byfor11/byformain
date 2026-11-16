@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>byformain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="byformain">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f2f3f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="screen" aria-live="polite"></main>
+  <nav id="tabs" aria-label="Secciones"></nav>
+</div>
+<div id="overlay" hidden></div>
+<div id="dialog" hidden></div>
+<div id="toast" hidden></div>
+<noscript>byformain necesita JavaScript.</noscript>
+<script src="logic.js"></script>
+<script src="chessengine.js"></script>
+<script src="mental.js"></script>
+<script src="modules.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
